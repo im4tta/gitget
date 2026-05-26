@@ -18,12 +18,13 @@ export default function HomePage() {
   const [downloadProgress, setDownloadProgress] = useState<{ done: number; total: number } | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
-  const loadRepo = useCallback(async (url: string) => {
+  const loadRepo = useCallback(async (url: string, branch?: string) => {
     const parsed = parseGitHubUrl(url)
     if (!parsed) {
       setError('Invalid GitHub URL. Use: https://github.com/owner/repo')
       return
     }
+    if (branch) parsed.branch = branch
     setError(null)
     setSelectedFiles(new Map())
     setExpandedPaths(new Set())
@@ -36,7 +37,7 @@ export default function HomePage() {
     abortRef.current = controller
 
     try {
-      const items = await fetchDirContents(parsed.owner, parsed.repo, '', controller.signal)
+      const items = await fetchDirContents(parsed.owner, parsed.repo, '', parsed.branch, controller.signal)
       setTreeData({ '': items })
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') {
@@ -51,11 +52,7 @@ export default function HomePage() {
     if (!repo) return
 
     if (expandedPaths.has(path)) {
-      setExpandedPaths((prev) => {
-        const next = new Set(prev)
-        next.delete(path)
-        return next
-      })
+      setExpandedPaths((prev) => { const n = new Set(prev); n.delete(path); return n })
       return
     }
 
@@ -66,17 +63,13 @@ export default function HomePage() {
 
     setLoadingPaths((prev) => new Set(prev).add(path))
     try {
-      const items = await fetchDirContents(repo.owner, repo.repo, path)
+      const items = await fetchDirContents(repo.owner, repo.repo, path, repo.branch)
       setTreeData((prev) => ({ ...prev, [path]: items }))
       setExpandedPaths((prev) => new Set(prev).add(path))
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message)
     } finally {
-      setLoadingPaths((prev) => {
-        const next = new Set(prev)
-        next.delete(path)
-        return next
-      })
+      setLoadingPaths((prev) => { const n = new Set(prev); n.delete(path); return n })
     }
   }, [repo, expandedPaths, treeData])
 
@@ -124,18 +117,13 @@ export default function HomePage() {
   }, [])
 
   const handleDownload = useCallback(async () => {
-    const files = Array.from(selectedFiles.entries()).map(([path, downloadUrl]) => ({
-      path,
-      downloadUrl,
-    }))
+    const files = Array.from(selectedFiles.entries()).map(([path, downloadUrl]) => ({ path, downloadUrl }))
     if (files.length === 0) return
 
     setDownloading(true)
     setDownloadProgress(null)
     try {
-      await downloadSelected(files, (done, total) => {
-        setDownloadProgress({ done, total })
-      })
+      await downloadSelected(files, (done, total) => setDownloadProgress({ done, total }))
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message)
     } finally {
@@ -155,7 +143,7 @@ export default function HomePage() {
         </p>
       </header>
 
-      <RepoInput onLoad={loadRepo} loading={loading} />
+      <RepoInput onLoad={loadRepo} loading={loading} defaultBranch={repo?.branch} />
 
       {error && (
         <div className="mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
@@ -182,7 +170,8 @@ export default function HomePage() {
             <span className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded text-xs">
               {repo.owner}/{repo.repo}
             </span>
-            <span>·</span>
+            <span className="font-mono text-gray-400">{repo.branch}</span>
+            <span className="text-gray-300">·</span>
             <span>{selectedFiles.size} file{selectedFiles.size !== 1 ? 's' : ''} selected</span>
           </div>
           <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-2 max-h-[60vh] overflow-y-auto">

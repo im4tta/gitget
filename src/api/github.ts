@@ -2,6 +2,14 @@ import type { RepoItem, RepoInfo } from '../types'
 
 const API_BASE = 'https://api.github.com'
 
+function authHeaders(): Record<string, string> {
+  try {
+    const token = localStorage.getItem('gitget_token')
+    if (token) return { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' }
+  } catch { /* localStorage not available */ }
+  return { Accept: 'application/vnd.github.v3+json' }
+}
+
 export function parseGitHubUrl(input: string): RepoInfo | null {
   let owner: string
   let repo: string
@@ -9,13 +17,11 @@ export function parseGitHubUrl(input: string): RepoInfo | null {
 
   const trimmed = input.trim()
 
-  // owner/repo shorthand
   if (/^[\w.-]+\/[\w.-]+$/.test(trimmed)) {
     [owner, repo] = trimmed.split('/')
     return { owner, repo, branch }
   }
 
-  // Full GitHub URL
   try {
     const url = new URL(trimmed)
     if (url.hostname !== 'github.com') return null
@@ -35,13 +41,12 @@ export async function fetchDirContents(
   owner: string,
   repo: string,
   path: string,
+  ref?: string,
   signal?: AbortSignal,
 ): Promise<RepoItem[]> {
-  const endpoint = `${API_BASE}/repos/${owner}/${repo}/contents/${path}`
-  const res = await fetch(endpoint, {
-    headers: { Accept: 'application/vnd.github.v3+json' },
-    signal,
-  })
+  let endpoint = `${API_BASE}/repos/${owner}/${repo}/contents/${path}`
+  if (ref) endpoint += `?ref=${encodeURIComponent(ref)}`
+  const res = await fetch(endpoint, { headers: authHeaders(), signal })
   if (!res.ok) {
     const msg = res.status === 403
       ? 'Rate limited. Add a GitHub token or try later.'

@@ -10,12 +10,13 @@ export function useRepoTree() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const loadRepo = useCallback(async (url: string) => {
+  const loadRepo = useCallback(async (url: string, branch?: string) => {
     const parsed = parseGitHubUrl(url)
     if (!parsed) {
       setError('Invalid GitHub URL. Use: https://github.com/owner/repo')
       return
     }
+    if (branch) parsed.branch = branch
     setError(null)
     setExpandedPaths(new Set())
     setTreeData({})
@@ -23,7 +24,7 @@ export function useRepoTree() {
     setRepo(parsed)
 
     try {
-      const items = await fetchDirContents(parsed.owner, parsed.repo, '')
+      const items = await fetchDirContents(parsed.owner, parsed.repo, '', parsed.branch)
       setTreeData({ '': items })
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message)
@@ -47,7 +48,7 @@ export function useRepoTree() {
 
     setLoadingPaths((prev) => new Set(prev).add(path))
     try {
-      const items = await fetchDirContents(repo.owner, repo.repo, path)
+      const items = await fetchDirContents(repo.owner, repo.repo, path, repo.branch)
       setTreeData((prev) => ({ ...prev, [path]: items }))
       setExpandedPaths((prev) => new Set(prev).add(path))
     } catch (err: unknown) {

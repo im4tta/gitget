@@ -20,7 +20,7 @@ export default function ComparePage() {
   const prevKeyRef = useRef<string | null>(null)
 
   const syncToggleDir = useCallback(async (path: string, origin: 'left' | 'right') => {
-    const key = `${left.repo?.owner ?? ''}/${left.repo?.repo ?? ''}|${right.repo?.owner ?? ''}/${right.repo?.repo ?? ''}`
+    const key = `${left.repo?.owner ?? ''}/${left.repo?.repo ?? ''}@${left.repo?.branch ?? ''}|${right.repo?.owner ?? ''}/${right.repo?.repo ?? ''}@${right.repo?.branch ?? ''}`
     if (key !== prevKeyRef.current) {
       prevKeyRef.current = key
       setSelectedFile(null)
@@ -41,7 +41,7 @@ export default function ComparePage() {
   }, [left, right])
 
   const handleSelectFile = useCallback(async (path: string, side: 'left' | 'right') => {
-    const key = `${left.repo?.owner ?? ''}/${left.repo?.repo ?? ''}|${right.repo?.owner ?? ''}/${right.repo?.repo ?? ''}`
+    const key = `${left.repo?.owner ?? ''}/${left.repo?.repo ?? ''}@${left.repo?.branch ?? ''}|${right.repo?.owner ?? ''}/${right.repo?.repo ?? ''}@${right.repo?.branch ?? ''}`
     if (key !== prevKeyRef.current) {
       prevKeyRef.current = key
       setSelectedFile(null)
@@ -99,17 +99,13 @@ export default function ComparePage() {
       <header className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">Compare</h1>
         <p className="text-gray-500 dark:text-gray-400 mt-0.5 text-sm">
-          Compare files between two GitHub repos
+          Compare files between two GitHub repos (or the same repo on different branches)
         </p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <div>
-          <CompareInput label="Repository A" loading={left.loading} onLoad={left.loadRepo} />
-        </div>
-        <div>
-          <CompareInput label="Repository B" loading={right.loading} onLoad={right.loadRepo} />
-        </div>
+        <CompareInput label="Repository A" loading={left.loading} defaultBranch={left.repo?.branch} onLoad={left.loadRepo} />
+        <CompareInput label="Repository B" loading={right.loading} defaultBranch={right.repo?.branch} onLoad={right.loadRepo} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
