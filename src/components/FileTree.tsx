@@ -94,18 +94,6 @@ function TreeNode({
   const selectedChildFiles = children?.filter((c) => c.type === 'file' && selectedFiles.has(c.path)).length ?? 0
   const dirSelectionState = childCount > 0 && selectedChildFiles === childCount ? 'all' : selectedChildFiles > 0 ? 'partial' : 'none'
 
-  const allFileDescendants = (items: RepoItem[]): RepoItem[] => {
-    const result: RepoItem[] = []
-    for (const item of items) {
-      if (item.type === 'file') {
-        result.push(item)
-      } else if (item.type === 'dir' && treeData[item.path]) {
-        result.push(...allFileDescendants(treeData[item.path]))
-      }
-    }
-    return result
-  }
-
   const handleDirSelect = () => {
     if (dirSelectionState === 'all' || isSelected) {
       onDeselectDir([item])

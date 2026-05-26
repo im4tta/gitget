@@ -62,3 +62,9 @@ export async function fetchFileContent(url: string): Promise<Blob> {
   if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`)
   return res.blob()
 }
+
+export async function fetchFileText(url: string): Promise<string> {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Failed to fetch file: ${res.status}`)
+  return res.text()
+}
