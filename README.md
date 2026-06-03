@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="public/favicon.svg" width="80" height="80" alt="gitget">
+
 # gitget
 
 **Browse any GitHub repo and download only the files you need.**
